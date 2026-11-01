@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>dorsam.de</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦆</text></svg>">
 <style>
-  :root { --bg: #f6f5f2; --fg: #1d1d1f; --muted: #6e6e73; --line: #d9d6cf; }
+  :root { --bg: #f6f5f2; --fg: #1d1d1f; --muted: #6e6e73; --line: #d9d6cf; --accent: #e8a33d; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #151517; --fg: #ececee; --muted: #9a9aa0; --line: #2c2c30; }
+    :root { --bg: #151517; --fg: #ececee; --muted: #9a9aa0; --line: #2c2c30; --accent: #f0b65a; }
   }
   html, body { height: 100%; margin: 0; }
   body {
@@ -16,17 +17,54 @@
     background: var(--bg); color: var(--fg);
     font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
-  main { text-align: center; padding: 0 16px; }
-  h1 { font-size: clamp(2rem, 6vw, 3.25rem); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
-  hr { width: 48px; border: 0; border-top: 2px solid var(--line); margin: 1.25rem auto; }
-  p { color: var(--muted); margin: 0; }
+  main { text-align: center; padding: 0 16px; max-width: 36rem; }
+  .duck {
+    font-size: clamp(4rem, 14vw, 6.5rem); line-height: 1; cursor: pointer;
+    display: inline-block; user-select: none; background: none; border: 0; padding: 0;
+    animation: bob 2.6s ease-in-out infinite;
+  }
+  .duck:active { transform: scale(0.9) rotate(-8deg); }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-10px) rotate(3deg); }
+  }
+  h1 { font-size: clamp(2rem, 6vw, 3.25rem); font-weight: 600; letter-spacing: -0.02em; margin: 0.5rem 0 0; }
+  hr { width: 48px; border: 0; border-top: 2px solid var(--accent); margin: 1.1rem auto; }
+  #spruch { color: var(--fg); font-size: 1.1rem; min-height: 3.3em; margin: 0; transition: opacity .25s; }
+  .hint { color: var(--muted); font-size: 0.85rem; margin-top: 1.5rem; }
+  @media (prefers-reduced-motion: reduce) { .duck { animation: none; } #spruch { transition: none; } }
 </style>
 </head>
 <body>
 <main>
+  <button class="duck" id="ente" aria-label="Neuer Spruch" title="Quak?">🦆</button>
   <h1>dorsam.de</h1>
   <hr>
-  <p>Private Domain – hier gibt es nichts zu sehen.</p>
+  <p id="spruch">Hier gibt es nichts zu sehen. Wirklich. Wir haben extra nachgeschaut.</p>
+  <p class="hint">Die Ente weiß mehr. Einfach anklicken.</p>
 </main>
+<script>
+  const sprueche = [
+    "Hier gibt es nichts zu sehen. Wirklich. Wir haben extra nachgeschaut.",
+    "Inhalt nicht gefunden. Die Domain dagegen schon – Glückwunsch!",
+    "E-Mail an diese Domain? Haben wir per DNS abbestellt. Sogar mit Nachdruck.",
+    "Diese Seite wird von einem Raspberry Pi bewacht. Er macht gerade ein Backup.",
+    "Keine Cookies hier. Nicht mal die zum Essen.",
+    "Under Construction seit … eigentlich nie. Und das bleibt auch so.",
+    "Sie haben das Ende des Internets erreicht. Bitte drehen Sie um.",
+    "Diese Seite hat mehr Firewall-Regeln als Inhalt.",
+    "Quak. (Übersetzung: Bitte gehen Sie weiter.)",
+    "Gehostet auf GitHub, bewacht von einer Ente, gepflegt von niemandem.",
+    "Falls Sie Fernwartung suchen: Die Ente leitet nicht weiter.",
+    "Uptime: 100 %. Nützlichkeit: 0 %. Wir nennen das Balance."
+  ];
+  let i = 0;
+  const el = document.getElementById("spruch");
+  document.getElementById("ente").addEventListener("click", () => {
+    i = (i + 1 + Math.floor(Math.random() * (sprueche.length - 1))) % sprueche.length;
+    el.style.opacity = 0;
+    setTimeout(() => { el.textContent = sprueche[i]; el.style.opacity = 1; }, 200);
+  });
+</script>
 </body>
 </html>
