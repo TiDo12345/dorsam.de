@@ -1,0 +1,57 @@
+# Sucht mit gitleaks nach Zugangsdaten, Tokens und Schlüsseln (eingeführt 2026-11-02).
+# Bei jedem Push werden die neuen Commits geprüft, am 1. jedes Monats und beim Start von Hand
+# (Actions → Geheimnisse → Run workflow) die gesamte Historie.
+# Ein Fund lässt den Lauf fehlschlagen: Meldung per ntfy aufs Handy (Secret NTFY_ALARM_URL, Kanal im
+# Passwortmanager) und Mail von GitHub. Fundstellen stehen nur im Log, nie in der Meldung.
+# Testalarm: beim Start von Hand "testalarm" ankreuzen, dann kommt die Meldung ohne echten Fund.
+name: Geheimnisse
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      testalarm:
+        description: "Nur die ntfy-Meldung testen (kein echter Fund)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 5 1 * *"
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Meldung aufs Handy
+        if: failure() || inputs.testalarm
+        env:
+          NTFY_ALARM_URL: ${{ secrets.NTFY_ALARM_URL }}
+          REPO: ${{ github.repository }}
+          LAUF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ANLASS: ${{ github.event_name }}
+          COMMIT: ${{ github.sha }}
+          TEST: ${{ inputs.testalarm && 'ja' || 'nein' }}
+        run: |
+          if [ -z "$NTFY_ALARM_URL" ]; then echo "Secret NTFY_ALARM_URL fehlt"; exit 1; fi
+          if [ "$TEST" = ja ]; then
+            titel="GitHub: Testalarm Geheimnis-Suche"; prio=default; tags=white_check_mark
+            text="Test aus $REPO: Meldungen der Geheimnis-Suche kommen an."
+          else
+            titel="GitHub: Geheimnis-Suche schlägt an"; prio=high; tags=rotating_light
+            text="$REPO: gitleaks hat etwas gefunden oder ist fehlgeschlagen (Anlass $ANLASS, Commit ${COMMIT:0:7}). Fundstellen im Log, Link antippen."
+          fi
+          curl -fsS -m 20 -H "Title: $titel" -H "Priority: $prio" -H "Tags: $tags" -H "Click: $LAUF" \
+            -d "$text" "$NTFY_ALARM_URL" >/dev/null
+          echo "Meldung gesendet"
