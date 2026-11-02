@@ -30,7 +30,8 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+      - id: gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -42,10 +43,11 @@ jobs:
           LAUF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ANLASS: ${{ github.event_name }}
           COMMIT: ${{ github.sha }}
-          TEST: ${{ inputs.testalarm && 'ja' || 'nein' }}
+          ERGEBNIS: ${{ steps.gitleaks.outcome }}
         run: |
           if [ -z "$NTFY_ALARM_URL" ]; then echo "Secret NTFY_ALARM_URL fehlt"; exit 1; fi
-          if [ "$TEST" = ja ]; then
+          # Echter Fund oder Fehler geht immer vor, auch bei einem Testlauf
+          if [ "$ERGEBNIS" = success ]; then
             titel="GitHub: Testalarm Geheimnis-Suche"; prio=default; tags=white_check_mark
             text="Test aus $REPO: Meldungen der Geheimnis-Suche kommen an."
           else
